@@ -1,58 +1,61 @@
 <?php
 
-/**
- * Copyright © 2016-present Spryker Systems GmbH. All rights reserved.
- * Use of this software requires acceptance of the Evaluation License Agreement. See LICENSE file.
- */
+namespace FondOfSpryker\Zed\Cms\Communication\Controller;
 
-namespace Spryker\Zed\Cms\Communication\Controller;
-
-use Generated\Shared\Transfer\RedirectTransfer;
+use Generated\Shared\Transfer\LocaleTransfer;
 use Generated\Shared\Transfer\UrlRedirectTransfer;
 use Generated\Shared\Transfer\UrlTransfer;
+use Spryker\Zed\Cms\Communication\Controller\RedirectController as SprykerRedirectController;
 use Spryker\Zed\Cms\Communication\Form\CmsRedirectForm;
-use Spryker\Zed\Kernel\Communication\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 /**
  * @method \Spryker\Zed\Cms\Communication\CmsCommunicationFactory getFactory()
  * @method \Spryker\Zed\Cms\Business\CmsFacadeInterface getFacade()
  * @method \Spryker\Zed\Cms\Persistence\CmsQueryContainerInterface getQueryContainer()
  */
-class RedirectController extends AbstractController
+class RedirectController extends SprykerRedirectController
 {
-    const REDIRECT_ADDRESS = '/cms/redirect';
-    const REQUEST_ID_URL = 'id-url';
-    const REQUEST_ID_URL_REDIRECT = 'id-url-redirect';
-
-    const MESSAGE_REDIRECT_CREATE_SUCCESS = 'Redirect was created successfully.';
-    const MESSAGE_REDIRECT_UPDATE_SUCCESS = 'Redirect was updated successfully.';
-    const MESSAGE_REDIRECT_DELETE_SUCCESS = 'Redirect was deleted successfully.';
-    const MESSAGE_ID_REDIRECT_EXTRACT_ERROR = 'ID redirect URL is not set.';
-
     /**
-     * @return array
+     * @param string $url
+     *
+     * @return \Generated\Shared\Transfer\LocaleTransfer
      */
-    public function indexAction()
+    protected function getLocaleForUrl(string $url): LocaleTransfer
     {
-        $redirectTable = $this->getFactory()
-            ->createCmsRedirectTable();
+        $availableLocaleArray = $this->getFactory()->getLocaleFacade()->getAvailableLocales();
+        $defaultLocale = $this->getFactory()->getLocaleFacade()->getCurrentLocale();
 
-        return [
-            'redirects' => $redirectTable->render(),
-        ];
+        $urlLocale = $this->extractLocaleFromUrl($url);
+        if ($urlLocale === null) {
+            return $defaultLocale;
+        }
+
+        foreach ($availableLocaleArray as $localeId => $localeName) {
+            $shortLocaleName = substr($localeName, 0, 2);
+            if ($shortLocaleName !== $urlLocale) {
+                continue;
+            }
+
+            return $this->getFactory()->getLocaleFacade()->getLocale($localeName);
+        }
+
+        return $defaultLocale;
     }
 
     /**
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     * @param string $url
+     *
+     * @return null|string
      */
-    public function tableAction()
+    protected function extractLocaleFromUrl(string $url): ?string
     {
-        $table = $this->getFactory()
-            ->createCmsRedirectTable();
+        $urlParts = explode('/', trim($url, '/'));
+        if (is_array($urlParts) && count($urlParts) > 0 && is_string($urlParts[0]) && strlen($urlParts[0]) == 2) {
+            return $urlParts[0];
+        }
 
-        return $this->jsonResponse($table->fetchData());
+        return null;
     }
 
     /**
@@ -75,7 +78,7 @@ class RedirectController extends AbstractController
             $sourceUrlTransfer = new UrlTransfer();
             $sourceUrlTransfer
                 ->setUrl($data[CmsRedirectForm::FIELD_FROM_URL])
-                ->setFkLocale($this->getFactory()->getLocaleFacade()->getCurrentLocale()->getIdLocale());
+                ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale());
 
             $urlRedirectTransfer = new UrlRedirectTransfer();
             $urlRedirectTransfer
@@ -118,7 +121,7 @@ class RedirectController extends AbstractController
             $sourceUrlTransfer
                 ->setIdUrl($idUrl)
                 ->setUrl($data[CmsRedirectForm::FIELD_FROM_URL])
-                ->setFkLocale($this->getFactory()->getLocaleFacade()->getCurrentLocale()->getIdLocale());
+                ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale());
 
             $urlRedirectTransfer = new UrlRedirectTransfer();
             $urlRedirectTransfer
@@ -136,68 +139,5 @@ class RedirectController extends AbstractController
         return $this->viewResponse([
             'form' => $form->createView(),
         ]);
-    }
-
-    /**
-     * @param \Orm\Zed\Url\Persistence\SpyUrl $url
-     * @param array $data
-     *
-     * @return \Generated\Shared\Transfer\UrlTransfer
-     */
-    protected function createUrlTransfer($url, $data)
-    {
-        $urlTransfer = new UrlTransfer();
-        $urlTransfer->fromArray($url->toArray(), true);
-        $urlTransfer->setUrl($data[CmsRedirectForm::FIELD_FROM_URL]);
-        $urlTransfer->setFkRedirect($url->getFkResourceRedirect());
-        $urlTransfer->setResourceId($url->getResourceId());
-        $urlTransfer->setResourceType($url->getResourceType());
-
-        return $urlTransfer;
-    }
-
-    /**
-     * @param \Orm\Zed\Url\Persistence\SpyUrlRedirect $redirect
-     * @param array $data
-     *
-     * @return \Generated\Shared\Transfer\RedirectTransfer
-     */
-    protected function createRedirectTransfer($redirect, $data)
-    {
-        $redirectTransfer = (new RedirectTransfer())->fromArray($redirect->toArray());
-        $redirectTransfer->setToUrl($data[CmsRedirectForm::FIELD_TO_URL]);
-        $redirectTransfer->setStatus($data[CmsRedirectForm::FIELD_STATUS]);
-
-        return $redirectTransfer;
-    }
-
-    /**
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     *
-     * @throws \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException
-     *
-     * @return \Symfony\Component\HttpFoundation\RedirectResponse
-     */
-    public function deleteAction(Request $request)
-    {
-        if (!$request->isMethod(Request::METHOD_DELETE)) {
-            throw new MethodNotAllowedHttpException([Request::METHOD_DELETE], 'This action requires a DELETE request.');
-        }
-
-        $idUrlRedirect = $this->castId($request->request->get(static::REQUEST_ID_URL_REDIRECT));
-
-        if ($idUrlRedirect === 0) {
-            $this->addErrorMessage(static::MESSAGE_ID_REDIRECT_EXTRACT_ERROR);
-
-            return $this->redirectResponse('/cms/redirect');
-        }
-
-        $urlRedirectTransfer = new UrlRedirectTransfer();
-        $urlRedirectTransfer->setIdUrlRedirect($idUrlRedirect);
-
-        $this->getFactory()->getUrlFacade()->deleteUrlRedirect($urlRedirectTransfer);
-
-        $this->addSuccessMessage(static::MESSAGE_REDIRECT_DELETE_SUCCESS);
-        return $this->redirectResponse('/cms/redirect');
     }
 }
