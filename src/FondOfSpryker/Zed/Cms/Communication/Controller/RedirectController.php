@@ -23,24 +23,50 @@ class RedirectController extends SprykerRedirectController
      */
     protected function getLocaleForUrl(string $url): LocaleTransfer
     {
-        $availableLocaleArray = $this->getFactory()->getLocaleFacade()->getAvailableLocales();
-        $defaultLocale = $this->getFactory()->getLocaleFacade()->getCurrentLocale();
-
-        $urlLocale = $this->extractLocaleFromUrl($url);
-        if ($urlLocale === null) {
-            return $defaultLocale;
+        $localeTransferExtractedFromUrl = $this->getLocaleTransferFromUrl($url);
+        if ($localeTransferExtractedFromUrl === null) {
+            return $this->getFactory()->getLocaleFacade()->getCurrentLocale();
         }
 
-        foreach ($availableLocaleArray as $localeId => $localeName) {
-            $shortLocaleName = substr($localeName, 0, 2);
-            if ($shortLocaleName !== $urlLocale) {
-                continue;
+        return $localeTransferExtractedFromUrl;
+    }
+
+    /**
+     * @return \Generated\Shared\Transfer\LocaleTransfer[]
+     */
+    protected function getAvailableLocaleTransfers(): array
+    {
+        $availableLocaleTransfers = [];
+        $availableLocaleNameArray = $this->getFactory()->getLocaleFacade()->getAvailableLocales();
+        foreach ($availableLocaleNameArray as $localeId => $localeName) {
+            $availableLocaleTransfers[] = $this->getFactory()->getLocaleFacade()->getLocale($localeName);
+        }
+
+        return $availableLocaleTransfers;
+    }
+
+    /**
+     * @param string $url
+     *
+     * @return null|\Generated\Shared\Transfer\LocaleTransfer
+     */
+    protected function getLocaleTransferFromUrl(string $url): ?LocaleTransfer
+    {
+        $shortLocaleNameFromUrl = $this->extractShortLocaleNameFromUrl($url);
+        if ($shortLocaleNameFromUrl === null) {
+            return null;
+        }
+
+        $availableLocaleTransfers = $this->getAvailableLocaleTransfers();
+        foreach ($availableLocaleTransfers as $availableLocaleTransfer) {
+            $availableLocaleNameShort = substr($availableLocaleTransfer->getLocaleName(), 0, 2);
+
+            if ($availableLocaleNameShort == $shortLocaleNameFromUrl) {
+                return $availableLocaleTransfer;
             }
-
-            return $this->getFactory()->getLocaleFacade()->getLocale($localeName);
         }
 
-        return $defaultLocale;
+        return null;
     }
 
     /**
@@ -48,7 +74,7 @@ class RedirectController extends SprykerRedirectController
      *
      * @return null|string
      */
-    protected function extractLocaleFromUrl(string $url): ?string
+    protected function extractShortLocaleNameFromUrl(string $url): ?string
     {
         $urlParts = explode('/', trim($url, '/'));
         if (is_array($urlParts) && count($urlParts) > 0 && is_string($urlParts[0]) && strlen($urlParts[0]) == 2) {
