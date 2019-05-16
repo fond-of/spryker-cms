@@ -5,12 +5,14 @@ namespace FondOfSpryker\Zed\Cms\Communication\Controller;
 use Generated\Shared\Transfer\LocaleTransfer;
 use Generated\Shared\Transfer\UrlRedirectTransfer;
 use Generated\Shared\Transfer\UrlTransfer;
+use Orm\Zed\Store\Persistence\SpyStore;
+use Orm\Zed\Store\Persistence\SpyStoreQuery;
 use Spryker\Zed\Cms\Communication\Controller\RedirectController as SprykerRedirectController;
 use Spryker\Zed\Cms\Communication\Form\CmsRedirectForm;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * @method \Spryker\Zed\Cms\Communication\CmsCommunicationFactory getFactory()
+ * @method \FondOfSpryker\Zed\Cms\Communication\CmsCommunicationFactory getFactory()
  * @method \Spryker\Zed\Cms\Business\CmsFacadeInterface getFacade()
  * @method \Spryker\Zed\Cms\Persistence\CmsQueryContainerInterface getQueryContainer()
  */
@@ -104,7 +106,9 @@ class RedirectController extends SprykerRedirectController
             $sourceUrlTransfer = new UrlTransfer();
             $sourceUrlTransfer
                 ->setUrl($data[CmsRedirectForm::FIELD_FROM_URL])
-                ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale());
+                ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale())
+                ->setFkStore($this->getFactory()->getStore()->getIdStore())
+            ;
 
             $urlRedirectTransfer = new UrlRedirectTransfer();
             $urlRedirectTransfer
@@ -147,7 +151,9 @@ class RedirectController extends SprykerRedirectController
             $sourceUrlTransfer
                 ->setIdUrl($idUrl)
                 ->setUrl($data[CmsRedirectForm::FIELD_FROM_URL])
-                ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale());
+                ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale())
+                ->setFkStore($this->getFactory()->getStore()->getIdStore())
+            ;
 
             $urlRedirectTransfer = new UrlRedirectTransfer();
             $urlRedirectTransfer
