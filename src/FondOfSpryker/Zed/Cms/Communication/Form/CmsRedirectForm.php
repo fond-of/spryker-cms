@@ -16,7 +16,7 @@ class CmsRedirectForm extends SprykerCmsRedirectForm
     /**
      * @return array
      */
-    protected function getUrlConstraints()
+    protected function getUrlConstraints(): array
     {
         $urlConstraints = parent::getUrlConstraints();
 
@@ -34,7 +34,7 @@ class CmsRedirectForm extends SprykerCmsRedirectForm
     /**
      * @return array
      */
-    protected function getMandatoryConstraints()
+    protected function getMandatoryConstraints(): array
     {
         return [
             $this->createRequiredConstraint(),

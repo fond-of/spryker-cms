@@ -5,8 +5,6 @@ namespace FondOfSpryker\Zed\Cms\Communication\Controller;
 use Generated\Shared\Transfer\LocaleTransfer;
 use Generated\Shared\Transfer\UrlRedirectTransfer;
 use Generated\Shared\Transfer\UrlTransfer;
-use Orm\Zed\Store\Persistence\SpyStore;
-use Orm\Zed\Store\Persistence\SpyStoreQuery;
 use Spryker\Zed\Cms\Communication\Controller\RedirectController as SprykerRedirectController;
 use Spryker\Zed\Cms\Communication\Form\CmsRedirectForm;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,7 +48,7 @@ class RedirectController extends SprykerRedirectController
     /**
      * @param string $url
      *
-     * @return null|\Generated\Shared\Transfer\LocaleTransfer
+     * @return \Generated\Shared\Transfer\LocaleTransfer|null
      */
     protected function getLocaleTransferFromUrl(string $url): ?LocaleTransfer
     {
@@ -74,7 +72,7 @@ class RedirectController extends SprykerRedirectController
     /**
      * @param string $url
      *
-     * @return null|string
+     * @return string|null
      */
     protected function extractShortLocaleNameFromUrl(string $url): ?string
     {
@@ -107,8 +105,7 @@ class RedirectController extends SprykerRedirectController
             $sourceUrlTransfer
                 ->setUrl($data[CmsRedirectForm::FIELD_FROM_URL])
                 ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale())
-                ->setFkStore($this->getFactory()->getStore()->getIdStore())
-            ;
+                ->setFkStore($this->getFactory()->getStore()->getIdStore());
 
             $urlRedirectTransfer = new UrlRedirectTransfer();
             $urlRedirectTransfer
@@ -120,6 +117,7 @@ class RedirectController extends SprykerRedirectController
                 ->createUrlRedirect($urlRedirectTransfer);
 
             $this->addSuccessMessage(static::MESSAGE_REDIRECT_CREATE_SUCCESS);
+
             return $this->redirectResponse(static::REDIRECT_ADDRESS);
         }
 
@@ -152,8 +150,7 @@ class RedirectController extends SprykerRedirectController
                 ->setIdUrl($idUrl)
                 ->setUrl($data[CmsRedirectForm::FIELD_FROM_URL])
                 ->setFkLocale($this->getLocaleForUrl($data[CmsRedirectForm::FIELD_FROM_URL])->getIdLocale())
-                ->setFkStore($this->getFactory()->getStore()->getIdStore())
-            ;
+                ->setFkStore($this->getFactory()->getStore()->getIdStore());
 
             $urlRedirectTransfer = new UrlRedirectTransfer();
             $urlRedirectTransfer
@@ -165,6 +162,7 @@ class RedirectController extends SprykerRedirectController
                 ->updateUrlRedirect($urlRedirectTransfer);
 
             $this->addSuccessMessage(static::MESSAGE_REDIRECT_UPDATE_SUCCESS);
+
             return $this->redirectResponse(static::REDIRECT_ADDRESS);
         }
 

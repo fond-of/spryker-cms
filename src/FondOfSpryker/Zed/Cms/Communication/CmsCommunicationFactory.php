@@ -26,8 +26,6 @@ class CmsCommunicationFactory extends SprykerCmsCommunicationFactory
     }
 
     /**
-     * @throws
-     *
      * @return \Generated\Shared\Transfer\StoreTransfer
      */
     public function getStore(): StoreTransfer
