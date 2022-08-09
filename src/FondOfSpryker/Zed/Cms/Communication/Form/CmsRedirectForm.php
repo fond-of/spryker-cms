@@ -30,16 +30,4 @@ class CmsRedirectForm extends SprykerCmsRedirectForm
 
         return $urlConstraints;
     }
-
-    /**
-     * @return array
-     */
-    protected function getMandatoryConstraints(): array
-    {
-        return [
-            $this->createRequiredConstraint(),
-            $this->createNotBlankConstraint(),
-            $this->createLengthConstraint(self::MAX_COUNT_CHARACTERS_REDIRECT_URL),
-        ];
-    }
 }
